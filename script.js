@@ -72,11 +72,68 @@ const projects = [
 
 const gallery = document.getElementById('gallery');
 
-gallery.innerHTML = projects.map((p, i) => `
+const itemsHTML = projects.map((p, i) => `
   <button class="gallery__item" data-idx="${i}">
     <img src="${p.src}" alt="${p.title}">
   </button>
 `).join("");
+
+gallery.innerHTML = itemsHTML + itemsHTML; // Clone for infinite scroll
+
+// ---------- CAROUSEL AUTOSCROLL ----------
+let reqFrame;
+let isPaused = false;
+let currentScroll = 0;
+
+function smoothScroll() {
+  if (!gallery || isPaused) return;
+
+  const firstClonedItem = gallery.children[projects.length];
+  const firstOriginalItem = gallery.children[0];
+
+  if (firstClonedItem && firstOriginalItem) {
+    const jumpDistance = firstClonedItem.offsetLeft - firstOriginalItem.offsetLeft;
+    
+    // Infinite loop boundaries
+    if (gallery.scrollLeft >= jumpDistance) {
+      currentScroll = gallery.scrollLeft - jumpDistance;
+      gallery.scrollLeft = currentScroll;
+    } else if (gallery.scrollLeft <= 0) {
+      currentScroll = gallery.scrollLeft + jumpDistance;
+      gallery.scrollLeft = currentScroll;
+    }
+
+    currentScroll += 0.8; // Adjust speed (px per frame)
+    gallery.scrollLeft = currentScroll;
+  }
+
+  reqFrame = requestAnimationFrame(smoothScroll);
+}
+
+function startAutoScroll() {
+  isPaused = false;
+  currentScroll = gallery.scrollLeft;
+  if (reqFrame) cancelAnimationFrame(reqFrame);
+  reqFrame = requestAnimationFrame(smoothScroll);
+}
+
+function stopAutoScroll() {
+  isPaused = true;
+  if (reqFrame) cancelAnimationFrame(reqFrame);
+}
+
+// Start after a tiny delay so offsetLeft calculations are accurate
+setTimeout(startAutoScroll, 100);
+
+gallery.addEventListener('mouseenter', stopAutoScroll);
+gallery.addEventListener('mouseleave', startAutoScroll);
+gallery.addEventListener('touchstart', stopAutoScroll, { passive: true });
+gallery.addEventListener('touchend', startAutoScroll, { passive: true });
+gallery.addEventListener('wheel', () => {
+  stopAutoScroll();
+  clearTimeout(gallery.wheelTimeout);
+  gallery.wheelTimeout = setTimeout(startAutoScroll, 200);
+}, { passive: true });
 
 // ---------- LIGHTBOX ----------
 const lightbox = document.getElementById('lightbox');
@@ -90,15 +147,18 @@ document.addEventListener('click', e => {
   lightboxImg.src = p.src;
   lightboxCaption.textContent = p.title + " — " + p.location;
   lightbox.classList.add('is-open');
+  stopAutoScroll();
 });
 
 document.getElementById('lightboxClose').onclick = () => {
   lightbox.classList.remove('is-open');
+  setTimeout(startAutoScroll, 500);
 };
 
 lightbox.addEventListener('click', e => {
   if (e.target === lightbox) {
     lightbox.classList.remove('is-open');
+    setTimeout(startAutoScroll, 500);
   }
 });
 
@@ -161,3 +221,23 @@ if (navBtn && navMenu) {
     }
   });
 }
+
+// ---------- SCROLL ANIMATIONS (INTERSECTION OBSERVER) ----------
+const observerOptions = {
+  root: null,
+  rootMargin: '0px',
+  threshold: 0.15
+};
+
+const observer = new IntersectionObserver((entries, obs) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('is-visible');
+      obs.unobserve(entry.target);
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll('.reveal').forEach(el => {
+  observer.observe(el);
+});
