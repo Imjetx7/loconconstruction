@@ -9,7 +9,7 @@ const company = {
   phoneSecond: "+30 698 585 0788",
   phoneHrefMain: "tel:+306993226502",
   phoneHrefSecond: "tel:+306985850788",
-  email: "loconinfo@gmail.com",
+  email: "locon.thermo@gmail.com",
   area: "Χανιά • Ρέθυμνο",
   facebook: "#",
   instagram: "#",
