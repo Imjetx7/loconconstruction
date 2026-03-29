@@ -75,7 +75,6 @@ const gallery = document.getElementById('gallery');
 gallery.innerHTML = projects.map((p, i) => `
   <button class="gallery__item" data-idx="${i}">
     <img src="${p.src}" alt="${p.title}">
-    <span class="gallery__cap">${p.title}</span>
   </button>
 `).join("");
 
